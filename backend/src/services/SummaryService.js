@@ -3,31 +3,17 @@ import { PIIDetector } from '../utils/PIIDetector.js';
 import { PromptBuilder } from '../utils/PromptBuilder.js';
 import { ApiError } from '../utils/ApiError.js';
 
-/**
- * Available OpenRouter models (update AI_MODEL in .env):
- * - deepseek/deepseek-r1-0528:free (FREE - excellent reasoning model)
- * - openai/gpt-4o-mini (fast and cost-effective)
- * - openai/gpt-4o (more powerful, higher cost)
- * - openai/gpt-3.5-turbo (fastest, lowest cost)
- * - anthropic/claude-3-haiku (alternative provider)
- * - anthropic/claude-3-sonnet (higher quality alternative)
- * - meta-llama/llama-3.1-8b-instruct (open source option)
- * 
- * See https://openrouter.ai/models for full list and pricing
- */
 
 export class SummaryService {
   constructor() {
     if (!process.env.OPENAI_API_KEY) {
       throw new ApiError(500, 'OpenAI API key not configured');
     }
-    
-    // Configure for OpenRouter or OpenAI based on environment
+
     const config = {
       apiKey: process.env.OPENAI_API_KEY,
     };
 
-    // Add OpenRouter specific configuration if using OpenRouter
     if (process.env.AI_BASE_URL) {
       config.baseURL = process.env.AI_BASE_URL;
       config.defaultHeaders = {
@@ -37,7 +23,7 @@ export class SummaryService {
     }
 
     this.openai = new OpenAI(config);
-    
+
     this.piiDetector = new PIIDetector();
     this.promptBuilder = new PromptBuilder();
   }
@@ -52,7 +38,7 @@ export class SummaryService {
   async generateSummary({ sessionNotes, preferences }) {
     try {
       // Step 1: Detect and optionally anonymize PII
-      const processedNotes = preferences.anonymizeData 
+      const processedNotes = preferences.anonymizeData
         ? this.piiDetector.anonymize(sessionNotes)
         : sessionNotes;
 
@@ -95,16 +81,15 @@ export class SummaryService {
       if (error instanceof ApiError) {
         throw error;
       }
-      
-      // Handle OpenAI/OpenRouter specific errors
+
       if (error.status === 401) {
         throw new ApiError(500, 'Invalid API key or authentication failed');
       }
-      
+
       if (error.status === 429) {
         throw new ApiError(429, 'API rate limit exceeded. Please try again later.');
       }
-      
+
       if (error.status === 400) {
         throw new ApiError(400, 'Invalid request to AI API');
       }
@@ -116,7 +101,7 @@ export class SummaryService {
       if (error.status === 403) {
         throw new ApiError(403, 'Access denied. Please check your API permissions.');
       }
-      
+
       console.error('AI API Error:', error);
       throw new ApiError(500, 'Failed to generate summary due to AI service error');
     }
@@ -129,8 +114,7 @@ export class SummaryService {
    */
   _getMaxTokens(length) {
     const model = process.env.AI_MODEL || 'openai/gpt-4o-mini';
-    
-    // DeepSeek models can handle larger outputs efficiently
+
     if (model.includes('deepseek')) {
       const tokenMap = {
         short: 300,
@@ -139,8 +123,8 @@ export class SummaryService {
       };
       return tokenMap[length] || 800;
     }
-    
-    // Default token limits for other models
+
+
     const tokenMap = {
       short: 200,
       medium: 500,
@@ -156,8 +140,8 @@ export class SummaryService {
    */
   _getTemperature(tone) {
     const model = process.env.AI_MODEL || 'openai/gpt-4o-mini';
-    
-    // DeepSeek reasoning models work better with slightly lower temperatures
+
+
     if (model.includes('deepseek')) {
       const temperatureMap = {
         clinical: 0.1,
@@ -166,8 +150,7 @@ export class SummaryService {
       };
       return temperatureMap[tone] || 0.3;
     }
-    
-    // Default temperatures for other models
+
     const temperatureMap = {
       clinical: 0.2,
       neutral: 0.4,
