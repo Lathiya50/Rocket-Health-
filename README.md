@@ -7,14 +7,12 @@ A professional consultation summary generator for healthcare providers. This pro
 ## Table of Contents
 - [Features](#features)
 - [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
   - [Backend Setup](#backend-setup)
   - [Frontend Setup](#frontend-setup)
 - [Environment Variables](#environment-variables)
 - [Usage](#usage)
 - [Security & Privacy](#security--privacy)
-- [License](#license)
 
 ---
 
