@@ -109,16 +109,16 @@ export const SummaryOutputDisplay = ({
       if (editor && isEditing) {
         // Get markdown content from BlockNote editor
         const markdownContent = await editor.blocksToMarkdownLossy(editor.document);
-        const success = await copyToClipboard(markdownContent);
+        const success = await copyToClipboard(markdownContent, true); // true for plain text
         if (success) {
-          showFeedback('success', 'Summary copied to clipboard!');
+          showFeedback('success', 'Summary copied to clipboard as plain text!');
         } else {
           showFeedback('error', 'Failed to copy to clipboard');
         }
       } else {
-        const success = await copyToClipboard(editableContent);
+        const success = await copyToClipboard(editableContent, true); // true for plain text
         if (success) {
-          showFeedback('success', 'Summary copied to clipboard!');
+          showFeedback('success', 'Summary copied to clipboard as plain text!');
         } else {
           showFeedback('error', 'Failed to copy to clipboard');
         }
@@ -132,16 +132,25 @@ export const SummaryOutputDisplay = ({
   const handleDownload = async () => {
     try {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-      const filename = `consultation-summary-${timestamp}.md`; // Changed to .md for markdown
+      const filename = `consultation-summary-${timestamp}`;
       
       if (editor && isEditing) {
         // Export as markdown from BlockNote editor
         const markdownContent = await editor.blocksToMarkdownLossy(editor.document);
-        downloadAsFile(markdownContent, filename);
+        const success = downloadAsFile(markdownContent, filename, 'pdf');
+        if (success) {
+          showFeedback('success', 'Summary downloaded as PDF successfully!');
+        } else {
+          showFeedback('error', 'Failed to download summary');
+        }
       } else {
-        downloadAsFile(editableContent, filename);
+        const success = downloadAsFile(editableContent, filename, 'pdf');
+        if (success) {
+          showFeedback('success', 'Summary downloaded as PDF successfully!');
+        } else {
+          showFeedback('error', 'Failed to download summary');
+        }
       }
-      showFeedback('success', 'Summary downloaded successfully!');
     } catch (error) {
       console.error('Error downloading summary:', error);
       showFeedback('error', 'Failed to download summary');
@@ -169,9 +178,25 @@ export const SummaryOutputDisplay = ({
     }
   };
 
-  const handleSimulateSend = () => {
-    // This is a simulation - in a real app, this would integrate with an email service
-    showFeedback('success', 'Summary sent to patient successfully! (Simulation)');
+  const handleSimulateSend = async () => {
+    try {
+      let content;
+      if (editor && isEditing) {
+        content = await editor.blocksToMarkdownLossy(editor.document);
+      } else {
+        content = editableContent;
+      }
+      
+      // In a real application, this would make an API call to send the email
+      // For simulation, we'll just show a success message after a brief delay
+      setTimeout(() => {
+        showFeedback('success', 'Summary sent to patient successfully! (Simulation)');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error sending summary to patient:', error);
+      showFeedback('error', 'Failed to send summary to patient');
+    }
   };
 
   if (!summary) {
@@ -298,10 +323,7 @@ export const SummaryOutputDisplay = ({
             {/* Summary Statistics */}
             <div className="text-xs sm:text-sm text-gray-500 flex flex-wrap gap-2 sm:gap-4 justify-center lg:justify-end">
               <span className="whitespace-nowrap">Words: {summary.metadata?.wordCount?.toLocaleString() || 0}</span>
-              <span className="whitespace-nowrap">Characters: {summary.metadata?.characterCount?.toLocaleString() || 0}</span>
-              {summary.metadata?.tokens && (
-                <span className="whitespace-nowrap">Tokens: {summary.metadata.tokens.toLocaleString()}</span>
-              )}
+              <span className="whitespace-nowrap">Characters: {summary.metadata?.characterCount?.toLocaleString() || 0}</span>             
             </div>
           </div>
         </CardFooter>
